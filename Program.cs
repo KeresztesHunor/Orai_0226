@@ -1,11 +1,10 @@
 ﻿using System.Drawing;
-using System.Numerics;
 
 namespace Orai_0226
 {
     internal class Program
     {
-        const int maxStackTombMeret = 1 << 10;
+        public const int maxStackTombMeret = 1 << 10;
 
         static void Main(string[] args)
         {
@@ -15,9 +14,9 @@ namespace Orai_0226
 
         void Run()
         {
-            //GyumolcsFeladat();
-            //CsereloFeladat();
-            //SzovegOsszefuzesFeladat();
+            GyumolcsFeladat();
+            CsereloFeladat();
+            SzovegOsszefuzesFeladat();
             KorFeladat();
         }
 
@@ -67,6 +66,7 @@ namespace Orai_0226
                 Console.WriteLine(index + ": " + kor);
             });
             Kor kivalasztottKor = korok[FeltetellelBeker("Válassz ki egy kör indexét: ", $"Csak a [0, {korok.Length - 1}] intervallumból választhatsz.", (int i) => i >= 0 && i < korok.Length)];
+            Console.Write("Add meg a kiválasztott kör színét!");
             SzinesKor szinesKor = new SzinesKor(kivalasztottKor.kozeppont, kivalasztottKor.sugar, SzintBeker());
             Console.WriteLine(szinesKor);
             Console.Write("Adj meg a körnek egy új színt! ");
@@ -76,41 +76,35 @@ namespace Orai_0226
 
         static Color SzintBeker()
         {
-            Color szin = default;
-            bool helyesErtek = false;
-            while (!helyesErtek)
+            Color? szin = null;
+            while (szin is null)
             {
                 Console.Write("Add meg egy ismert szín nevét, vagy kódját! Az ismert színek kilistázásához írj \"?\"-et (ha a szín nem ismert, akkor megadhatod az rgb kódját): ");
-                string? szinNev = Console.ReadLine();
-                if (szinNev != "?")
+                string? s = Console.ReadLine()?.Trim();
+                if (s != "?")
                 {
-                    if (Enum.TryParse(szinNev, true, out KnownColor result))
+                    if (Enum.TryParse(s, true, out KnownColor szinNev) && typeof(KnownColor).IsEnumDefined(szinNev))
                     {
-                        szin = Color.FromKnownColor(result);
-                    }
-                    else if (int.TryParse(szinNev, out int szinKod))
-                    {
-                        szin = Color.FromKnownColor((KnownColor)szinKod);
+                        szin = Color.FromKnownColor(szinNev);
                     }
                     else
                     {
                         Console.WriteLine("Ez a szín nem ismert! Add meg az rgb kódját!");
                         szin = Color.FromArgb(
-                            Beker<byte>("R (piros) [0, 255]: "),
-                            Beker<byte>("G (zöld) [0, 255]: "),
-                            Beker<byte>("B (kék) [0, 255]: ")
+                            Beker<byte>("R [0, 255]: "),
+                            Beker<byte>("G [0, 255]: "),
+                            Beker<byte>("B [0, 255]: ")
                         );
                     }
-                    helyesErtek = true;
                 }
                 else
                 {
                     Enum.GetValues<KnownColor>().ForEach(static (KnownColor knownColor) => {
-                        Console.WriteLine(knownColor + ": " + (int)knownColor);
+                        Console.WriteLine((int)knownColor + ": " + knownColor);
                     });
                 }
             }
-            return szin;
+            return szin.Value;
         }
 
         static T Beker<T>(string uzenet) where T : struct, IParsable<T>
@@ -151,96 +145,6 @@ namespace Orai_0226
                 }
             }
             return ertek;
-        }
-
-        class Cserelo(string szoveg)
-        {
-            public string szoveg { get; } = szoveg;
-
-            public string Csere(char c)
-            {
-                Span<char> ujSzoveg = sizeof(char) * szoveg.Length <= maxStackTombMeret ? stackalloc char[szoveg.Length] : new char[szoveg.Length];
-                for (int i = 0; i < szoveg.Length; i++)
-                {
-                    ujSzoveg[i] = szoveg[i] == c ? c : '*';
-                }
-                return new string(ujSzoveg);
-            }
-        }
-
-        class Gyumolcs(string nev)
-        {
-            public string nev { get; } = nev;
-
-            public override string ToString() => nev;
-        }
-
-        class Alma(string fajta) : Gyumolcs("Alma")
-        {
-            public string fajta { get; } = fajta;
-
-            public override string ToString() => base.ToString() + ", Fajtája: " + fajta;
-        }
-
-        class ForditottOsszefuzo(string szoveg1, string szoveg2)
-        {
-            public string szoveg1 { get; } = szoveg1;
-            public string szoveg2 { get; } = szoveg2;
-
-            public string ForditottanOsszefuz()
-            {
-                int tombMeret = szoveg1.Length + szoveg2.Length;
-                Span<char> osszefuzottSzoveg = sizeof(char) * tombMeret <= maxStackTombMeret ? stackalloc char[tombMeret] : new char[tombMeret];
-                szoveg1.CopyTo(osszefuzottSzoveg);
-                for (int i = 0; i < szoveg2.Length; i++)
-                {
-                    osszefuzottSzoveg[^(i + 1)] = szoveg2[i];
-                }
-                return new string(osszefuzottSzoveg);
-            }
-        }
-
-        class Kor(Vector2 kozeppont, float sugar)
-        {
-            public Vector2 kozeppont { get; set; } = kozeppont;
-            public float sugar { get; set; } = sugar >= 0 ? sugar : throw new ArgumentException("A körnek nem lehet negatív hosszúságú sugara.");
-
-            public float Kerulet => sugar * 2 * MathF.PI;
-            public float Terulet => sugar * sugar * MathF.PI;
-
-            public Kor(float x, float y, float sugar) : this(new Vector2(x, y), sugar)
-            {
-
-            }
-
-            public Kor(float sugar) : this(Vector2.Zero, sugar)
-            {
-
-            }
-
-            public override string ToString() => $"Középpont: {kozeppont}, Sugár: {sugar}, Kerület: {Kerulet}, Terület: {Terulet}";
-        }
-
-        class SzinesKor(Vector2 kozeppont, float sugar, Color szin) : Kor(kozeppont, sugar)
-        {
-            public Color szin { get; set; } = szin;
-
-            public SzinesKor(Vector2 kozeppont, float sugar) : this(kozeppont, sugar, Color.Black)
-            {
-                
-            }
-
-            public SzinesKor(float sugar, Color szin) : this(Vector2.Zero, sugar, szin)
-            {
-
-            }
-
-            public SzinesKor(float sugar) : this(sugar, Color.Black)
-            {
-
-            }
-
-            public override string ToString() => base.ToString() + ", Szín: " + szin.ToString().Substring(7, szin.ToString().Length - 8);
         }
     }
 }

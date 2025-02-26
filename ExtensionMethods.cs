@@ -5,10 +5,9 @@
         public static void ForEach<T>(this IEnumerable<T> values, Action<T, int> action)
         {
             int i = 0;
-            foreach (T value in values)
-            {
+            values.ForEach((T value) => {
                 action(value, i++);
-            }
+            });
         }
 
         public static void ForEach<T>(this IEnumerable<T> values, Action<T> action)
