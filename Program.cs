@@ -15,18 +15,142 @@ namespace Orai_0226
 
         void Run()
         {
-            CsereloFeladat();
-            SzovegOsszefuzesFeladat();
+            //GyumolcsFeladat();
+            //CsereloFeladat();
+            //SzovegOsszefuzesFeladat();
+            KorFeladat();
+        }
+
+        void GyumolcsFeladat()
+        {
+            Console.WriteLine(new Gyumolcs("Narancs"));
+            Console.WriteLine(new Alma("Idared"));
         }
 
         void CsereloFeladat()
         {
-            Console.WriteLine(new Cserelo("Macska").Csere('a'));
+            bool kilep = false;
+            List<string> tesztek = [];
+            while (!kilep)
+            {
+                Console.Write("Adj meg egy szöveget (ha nem akarsz több szöveget megadni, írd azt, hogy \"igen\"): ");
+                string szoveg = Console.ReadLine() ?? "";
+                if (szoveg != "igen")
+                {
+                    tesztek.Add(new Cserelo(szoveg).Csere(Beker<char>("Adj meg egy betűt: ")));
+                }
+                else
+                {
+                    kilep = true;
+                }
+            }
+            tesztek.ForEach(Console.WriteLine);
         }
 
         void SzovegOsszefuzesFeladat()
         {
             Console.WriteLine(new ForditottOsszefuzo("Macska", "Cica").ForditottanOsszefuz());
+        }
+
+        void KorFeladat()
+        {
+            Kor[] korok = new Kor[FeltetellelBeker("Add meg hány kört akarsz megadni: ", "Csak 0-nál nagyobb számot adhatsz meg.", static (int i) => i > 0)];
+            for (int i = 0; i < korok.Length; i++)
+            {
+                korok[i] = new Kor(
+                    Beker<float>("Add meg a kör középpontjának az x koordinátáját: "),
+                    Beker<float>("Add meg a kör középpontjának az y koordinátáját: "),
+                    FeltetellelBeker("Add meg a kör sugarát: ", "A körnek nem lehet negatív sugara.", static (float f) => f >= 0)
+                );
+            }
+            korok.ForEach(static (Kor kor, int index) => {
+                Console.WriteLine(index + ": " + kor);
+            });
+            Kor kivalasztottKor = korok[FeltetellelBeker("Válassz ki egy kör indexét: ", $"Csak a [0, {korok.Length - 1}] intervallumból választhatsz.", (int i) => i >= 0 && i < korok.Length)];
+            SzinesKor szinesKor = new SzinesKor(kivalasztottKor.kozeppont, kivalasztottKor.sugar, SzintBeker());
+            Console.WriteLine(szinesKor);
+            Console.Write("Adj meg a körnek egy új színt! ");
+            szinesKor.szin = SzintBeker();
+            Console.WriteLine(szinesKor);
+        }
+
+        static Color SzintBeker()
+        {
+            Color szin = default;
+            bool helyesErtek = false;
+            while (!helyesErtek)
+            {
+                Console.Write("Add meg egy ismert szín nevét, vagy kódját! Az ismert színek kilistázásához írj \"?\"-et (ha a szín nem ismert, akkor megadhatod az rgb kódját): ");
+                string? szinNev = Console.ReadLine();
+                if (szinNev != "?")
+                {
+                    if (Enum.TryParse(szinNev, true, out KnownColor result))
+                    {
+                        szin = Color.FromKnownColor(result);
+                    }
+                    else if (int.TryParse(szinNev, out int szinKod))
+                    {
+                        szin = Color.FromKnownColor((KnownColor)szinKod);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Ez a szín nem ismert! Add meg az rgb kódját!");
+                        szin = Color.FromArgb(
+                            Beker<byte>("R (piros) [0, 255]: "),
+                            Beker<byte>("G (zöld) [0, 255]: "),
+                            Beker<byte>("B (kék) [0, 255]: ")
+                        );
+                    }
+                    helyesErtek = true;
+                }
+                else
+                {
+                    Enum.GetValues<KnownColor>().ForEach(static (KnownColor knownColor) => {
+                        Console.WriteLine(knownColor + ": " + (int)knownColor);
+                    });
+                }
+            }
+            return szin;
+        }
+
+        static T Beker<T>(string uzenet) where T : struct, IParsable<T>
+        {
+            T ertek = default;
+            bool helyesErtek = false;
+            while (!helyesErtek)
+            {
+                Console.Write(uzenet);
+                if (T.TryParse(Console.ReadLine(), null, out T value))
+                {
+                    ertek = value;
+                    helyesErtek = true;
+                }
+                else
+                {
+                    Console.WriteLine($"Hiba! Csak {typeof(T).Name} típusú adatot lehet megadni.");
+                }
+            }
+            return ertek;
+        }
+
+        static T FeltetellelBeker<T>(string uzenet, string hibaUzenet, Func<T, bool> feltetel) where T : struct, IParsable<T>
+        {
+            T ertek = default;
+            bool helyesErtek = false;
+            while (!helyesErtek)
+            {
+                T esetlegesErtek = Beker<T>(uzenet);
+                if (feltetel(esetlegesErtek))
+                {
+                    ertek = esetlegesErtek;
+                    helyesErtek = true;
+                }
+                else
+                {
+                    Console.WriteLine("Hiba! " + hibaUzenet);
+                }
+            }
+            return ertek;
         }
 
         class Cserelo(string szoveg)
@@ -42,6 +166,20 @@ namespace Orai_0226
                 }
                 return new string(ujSzoveg);
             }
+        }
+
+        class Gyumolcs(string nev)
+        {
+            public string nev { get; } = nev;
+
+            public override string ToString() => nev;
+        }
+
+        class Alma(string fajta) : Gyumolcs("Alma")
+        {
+            public string fajta { get; } = fajta;
+
+            public override string ToString() => base.ToString() + ", Fajtája: " + fajta;
         }
 
         class ForditottOsszefuzo(string szoveg1, string szoveg2)
@@ -79,11 +217,13 @@ namespace Orai_0226
             {
 
             }
+
+            public override string ToString() => $"Középpont: {kozeppont}, Sugár: {sugar}, Kerület: {Kerulet}, Terület: {Terulet}";
         }
 
         class SzinesKor(Vector2 kozeppont, float sugar, Color szin) : Kor(kozeppont, sugar)
         {
-            Color szin { get; set; } = szin;
+            public Color szin { get; set; } = szin;
 
             public SzinesKor(Vector2 kozeppont, float sugar) : this(kozeppont, sugar, Color.Black)
             {
@@ -99,6 +239,8 @@ namespace Orai_0226
             {
 
             }
+
+            public override string ToString() => base.ToString() + ", Szín: " + szin.ToString().Substring(7, szin.ToString().Length - 8);
         }
     }
 }
